@@ -30,22 +30,22 @@ jobs:
         id: arguments
         run: |
           if [[ ${{ inputs.platform }} == "iOS" ]]; then
-              echo "destination='platform=iOS Simulator,name=iPhone 16'" >> "$GITHUB_OUTPUT"
+              echo "destination=platform=iOS Simulator,name=iPhone 16" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "macOS" ]]; then
-            echo "destination='platform=macOS'" >> "$GITHUB_OUTPUT"
+            echo "destination=platform=macOS" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "tvOS" ]]; then
-            echo "destination='platform=tvOS Simulator,name=Apple TV'" >> "$GITHUB_OUTPUT"
+            echo "destination=platform=tvOS Simulator,name=Apple TV" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "watchOS" ]]; then
-            echo "destination='platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)'" >> "$GITHUB_OUTPUT"
+            echo "destination=platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "visionOS" ]]; then
-            echo "destination='platform=visionOS Simulator,name=Apple Vision Pro'" >> "$GITHUB_OUTPUT"
+            echo "destination=platform=visionOS Simulator,name=Apple Vision Pro" >> "$GITHUB_OUTPUT"
           else
             echo "Unexpected platform value '${{ inputs.platform }}'"
             exit 1
           fi
 
           if [[ ${{ inputs.workspace }} != "" ]]; then
-            echo "workspace=-workspace '${{ inputs.workspace }}'" >> "$GITHUB_OUTPUT"
+            echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
       - name: Set Xcode version
