@@ -26,30 +26,35 @@ jobs:
   pipeline:
     runs-on: macos-15
     steps:
-      - name: Set environment for platform
+      - name: Set aruments
+        id: arguments
         run: |
           if [[ ${{ inputs.platform }} == "iOS" ]]; then
-              echo "DESTINATION='platform=iOS Simulator,name=iPhone 16'" >> "$GITHUB_ENV"
+              echo "destination='platform=iOS Simulator,name=iPhone 16'" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "macOS" ]]; then
-            echo "DESTINATION='platform=macOS'" >> "$GITHUB_ENV"
+            echo "destination='platform=macOS'" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "tvOS" ]]; then
-            echo "DESTINATION='platform=tvOS Simulator,name=Apple TV'" >> "$GITHUB_ENV"
+            echo "destination='platform=tvOS Simulator,name=Apple TV'" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "watchOS" ]]; then
-            echo "DESTINATION='platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)'" >> "$GITHUB_ENV"
+            echo "destination='platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)'" >> "$GITHUB_OUTPUT"
           elif [[ ${{ inputs.platform }} == "visionOS" ]]; then
-            echo "DESTINATION='platform=visionOS Simulator,name=Apple Vision Pro'" >> "$GITHUB_ENV"
+            echo "destination='platform=visionOS Simulator,name=Apple Vision Pro'" >> "$GITHUB_OUTPUT"
           else
             echo "Unexpected platform value '${{ inputs.platform }}'"
             exit 1
+          fi
+
+          if [[ ${{ inputs.workspace }} != "" ]]; then
+            echo "workspace=-workspace '${{ inputs.workspace }}'" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
       - name: Set Xcode version
         run: sudo xcode-select -s "/Applications/Xcode_16.2.app"
       - name: Build Debug
         run: xcodebuild build
-          ${{ inputs.workspace && -workspace "inputs.workspace" }}
+          ${{ steps.arguments.outputs.workspace }}
           -scheme "${{ inputs.scheme }}"
-          -destination "$DESTINATION"
+          -destination "${{ steps.arguments.outputs.destination }}"
           -configuration "Debug"
           -skipPackagePluginValidation
           CODE_SIGN_IDENTITY=""
@@ -57,25 +62,25 @@ jobs:
       - name: Build Unit tests
         if: ${{ ! inputs.skip_tests }}
         run: xcodebuild build-for-testing
-          ${{ inputs.workspace && -workspace "inputs.workspace" }}
+          ${{ steps.arguments.outputs.workspace }}
           -scheme "${{ inputs.scheme }}"
-          -destination "$DESTINATION"
+          -destination "${{ steps.arguments.outputs.destination }}"
           -skipPackagePluginValidation
           CODE_SIGN_IDENTITY=""
           CODE_SIGNING_REQUIRED=NO
       - name: Run Unit tests
         if: ${{ ! inputs.skip_tests }}
         run: xcodebuild test-without-building
-          ${{ inputs.workspace && -workspace "inputs.workspace" }}
+          ${{ steps.arguments.outputs.workspace }}
           -scheme "${{ inputs.scheme }}"
-          -destination "$DESTINATION"
+          -destination "${{ steps.arguments.outputs.destination }}"
           CODE_SIGN_IDENTITY=""
           CODE_SIGNING_REQUIRED=NO
       - name: Build Release
         run: xcodebuild build
-          ${{ inputs.workspace && -workspace "inputs.workspace" }}
+          ${{ steps.arguments.outputs.workspace }}
           -scheme "${{ inputs.scheme }}"
-          -destination "$DESTINATION"
+          -destination "${{ steps.arguments.outputs.destination }}"
           -configuration "Release"
           -skipPackagePluginValidation
           CODE_SIGN_IDENTITY=""
