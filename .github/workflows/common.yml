@@ -6,15 +6,9 @@ on:
   workflow_call:
     inputs:
       platform:
-        description: "The platform to be used"
+        description: "The platform to be used, options are 'iOS', 'macOS', 'tvOS', 'watchOS', 'visionOS'"
         required: true
-        type: choice
-        options:
-          - iOS
-          - macOS
-          - tvOS
-          - watchOS
-          - visionOS
+        type: string
       scheme:
         description: "The scheme to use"
         required: true
