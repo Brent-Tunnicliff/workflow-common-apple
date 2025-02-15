@@ -1,0 +1,87 @@
+# Copyright © 2025 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Common Apple Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "The platform to be used, options are 'iOS', 'macOS', 'tvOS', 'watchOS', 'visionOS'"
+        required: true
+        type: string
+      scheme:
+        description: "The scheme to use"
+        required: true
+        type: string
+      skip_tests:
+        description: "Should the tests be skipped"
+        default: false
+        required: false
+        type: boolean
+      workspace:
+        description: "The workspace of the project"
+        required: false
+        type: string
+jobs:
+  pipeline:
+    runs-on: macos-15
+    steps:
+      - name: Set aruments
+        id: arguments
+        run: |
+          if [[ "${{ inputs.platform }}" == "iOS" ]]; then
+              echo "destination=platform=iOS Simulator,name=iPhone 16" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.platform }}" == "macOS" ]]; then
+            echo "destination=platform=macOS" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.platform }}" == "tvOS" ]]; then
+            echo "destination=platform=tvOS Simulator,name=Apple TV" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.platform }}" == "watchOS" ]]; then
+            echo "destination=platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.platform }}" == "visionOS" ]]; then
+            echo "destination=platform=visionOS Simulator,name=Apple Vision Pro" >> "$GITHUB_OUTPUT"
+          else
+            echo "Unexpected platform value '${{ inputs.platform }}'"
+            exit 1
+          fi
+
+          if [[ "${{ inputs.workspace }}" != "" ]]; then
+            echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+      - name: Set Xcode version
+        run: sudo xcode-select -s "/Applications/Xcode_16.2.app"
+      - name: Build Debug
+        run: xcodebuild build
+          ${{ steps.arguments.outputs.workspace }}
+          -scheme "${{ inputs.scheme }}"
+          -destination "${{ steps.arguments.outputs.destination }}"
+          -configuration "Debug"
+          -skipPackagePluginValidation
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
+      - name: Build Unit tests
+        if: ${{ ! inputs.skip_tests }}
+        run: xcodebuild build-for-testing
+          ${{ steps.arguments.outputs.workspace }}
+          -scheme "${{ inputs.scheme }}"
+          -destination "${{ steps.arguments.outputs.destination }}"
+          -skipPackagePluginValidation
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
+      - name: Run Unit tests
+        if: ${{ ! inputs.skip_tests }}
+        run: xcodebuild test-without-building
+          ${{ steps.arguments.outputs.workspace }}
+          -scheme "${{ inputs.scheme }}"
+          -destination "${{ steps.arguments.outputs.destination }}"
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
+      - name: Build Release
+        run: xcodebuild build
+          ${{ steps.arguments.outputs.workspace }}
+          -scheme "${{ inputs.scheme }}"
+          -destination "${{ steps.arguments.outputs.destination }}"
+          -configuration "Release"
+          -skipPackagePluginValidation
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
