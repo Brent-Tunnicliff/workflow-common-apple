@@ -30,15 +30,15 @@ jobs:
         id: arguments
         run: |
           if [[ "${{ inputs.platform }}" == "iOS" ]]; then
-              echo "destination=platform=iOS Simulator,name=iPhone 16" >> "$GITHUB_OUTPUT"
+            SIMULATOR="iPhone"
           elif [[ "${{ inputs.platform }}" == "macOS" ]]; then
-            echo "destination=platform=macOS" >> "$GITHUB_OUTPUT"
+            DEVICE="macOS"
           elif [[ "${{ inputs.platform }}" == "tvOS" ]]; then
-            echo "destination=platform=tvOS Simulator,name=Apple TV" >> "$GITHUB_OUTPUT"
+            SIMULATOR="Apple TV"
           elif [[ "${{ inputs.platform }}" == "watchOS" ]]; then
-            echo "destination=platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)" >> "$GITHUB_OUTPUT"
+            SIMULATOR="Apple Watch Series 10 (46mm)"
           elif [[ "${{ inputs.platform }}" == "visionOS" ]]; then
-            echo "destination=platform=visionOS Simulator,name=Apple Vision Pro" >> "$GITHUB_OUTPUT"
+            SIMULATOR="Apple Vision Pro"
           else
             echo "Unexpected platform value '${{ inputs.platform }}'"
             exit 1
@@ -46,6 +46,15 @@ jobs:
 
           if [[ "${{ inputs.workspace }}" != "" ]]; then
             echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ $DEVICE != "" ]]; then
+            echo 'destination="platform=macOS"' >> "$GITHUB_OUTPUT"
+          elif [[ $SIMULATOR != "" ]]; then
+            echo 'destination="id=$(xcrun simctl list devices | grep -m 1 "$SIMULATOR" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")"' >> "$GITHUB_OUTPUT"
+          else
+            echo "Incorrect platform configuration"
+            exit 1
           fi
       - uses: actions/checkout@v4
       - name: Set Xcode version
