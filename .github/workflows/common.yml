@@ -32,7 +32,7 @@ jobs:
           if [[ "${{ inputs.platform }}" == "iOS" ]]; then
             SIMULATOR="iPhone"
           elif [[ "${{ inputs.platform }}" == "macOS" ]]; then
-            DEVICE="macOS"
+            DESTINATION="platform=macOS"
           elif [[ "${{ inputs.platform }}" == "tvOS" ]]; then
             SIMULATOR="Apple TV"
           elif [[ "${{ inputs.platform }}" == "watchOS" ]]; then
@@ -44,17 +44,22 @@ jobs:
             exit 1
           fi
 
-          if [[ "${{ inputs.workspace }}" != "" ]]; then
-            echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
+          if [[ $SIMULATOR != "" ]]; then
+            DEVICE_ID=$(xcrun simctl list devices | grep -m 1 "$SIMULATOR" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+            DESTINATION="id=$DEVICE_ID"
           fi
 
-          if [[ $DEVICE != "" ]]; then
-            echo 'destination="platform=macOS"' >> "$GITHUB_OUTPUT"
-          elif [[ $SIMULATOR != "" ]]; then
-            echo 'destination="id=$(xcrun simctl list devices | grep -m 1 "$SIMULATOR" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")"' >> "$GITHUB_OUTPUT"
+          if [[ $DESTINATION != "" ]]; then
+            echo $DESTINATION
+            echo "destination=$DESTINATION" >> "$GITHUB_OUTPUT"
           else
-            echo "Incorrect platform configuration"
+            echo "DESTINATION missing"
             exit 1
+          fi
+
+          if [[ "${{ inputs.workspace }}" != "" ]]; then
+            echo "Applying workspace ${{ inputs.workspace }}"
+            echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
       - name: Set Xcode version
