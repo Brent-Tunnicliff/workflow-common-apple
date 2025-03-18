@@ -30,22 +30,22 @@ jobs:
         id: arguments
         run: |
           if [[ "${{ inputs.platform }}" == "iOS" ]]; then
-            SIMULATOR="iPhone"
+            SIMULATOR="iOS 18"
           elif [[ "${{ inputs.platform }}" == "macOS" ]]; then
             DESTINATION="platform=macOS"
           elif [[ "${{ inputs.platform }}" == "tvOS" ]]; then
-            SIMULATOR="Apple TV"
+            SIMULATOR="tvOS 18"
           elif [[ "${{ inputs.platform }}" == "watchOS" ]]; then
-            SIMULATOR="Apple Watch Series 10 (46mm)"
+            SIMULATOR="watchOS 11"
           elif [[ "${{ inputs.platform }}" == "visionOS" ]]; then
-            SIMULATOR="Apple Vision Pro"
+            SIMULATOR="visionOS 2"
           else
             echo "Unexpected platform value '${{ inputs.platform }}'"
             exit 1
           fi
 
           if [[ $SIMULATOR != "" ]]; then
-            DEVICE_ID=$(xcrun simctl list devices | grep -m 1 "$SIMULATOR" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+            DEVICE_ID=$(xcrun simctl list devices "$SIMULATOR" | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
             DESTINATION="id=$DEVICE_ID"
           fi
 
