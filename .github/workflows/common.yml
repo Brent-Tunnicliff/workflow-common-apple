@@ -26,6 +26,8 @@ jobs:
   pipeline:
     runs-on: macos-15
     steps:
+      - name: List installed simulators
+        run: xcrun simctl list devices
       - name: Set aruments
         id: arguments
         run: |
