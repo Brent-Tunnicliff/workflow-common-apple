@@ -26,25 +26,41 @@ jobs:
   pipeline:
     runs-on: macos-15
     steps:
+      - name: List installed simulators
+        run: xcrun simctl list devices
       - name: Set aruments
         id: arguments
         run: |
           if [[ "${{ inputs.platform }}" == "iOS" ]]; then
-              echo "destination=platform=iOS Simulator,name=iPhone 16" >> "$GITHUB_OUTPUT"
+            SIMULATOR="iOS 18"
           elif [[ "${{ inputs.platform }}" == "macOS" ]]; then
-            echo "destination=platform=macOS" >> "$GITHUB_OUTPUT"
+            DESTINATION="platform=macOS"
           elif [[ "${{ inputs.platform }}" == "tvOS" ]]; then
-            echo "destination=platform=tvOS Simulator,name=Apple TV" >> "$GITHUB_OUTPUT"
+            SIMULATOR="tvOS 18"
           elif [[ "${{ inputs.platform }}" == "watchOS" ]]; then
-            echo "destination=platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)" >> "$GITHUB_OUTPUT"
+            SIMULATOR="watchOS 11"
           elif [[ "${{ inputs.platform }}" == "visionOS" ]]; then
-            echo "destination=platform=visionOS Simulator,name=Apple Vision Pro" >> "$GITHUB_OUTPUT"
+            SIMULATOR="visionOS 2"
           else
             echo "Unexpected platform value '${{ inputs.platform }}'"
             exit 1
           fi
 
+          if [[ $SIMULATOR != "" ]]; then
+            DEVICE_ID=$(xcrun simctl list devices "$SIMULATOR" | grep -m 1 -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
+            DESTINATION="id=$DEVICE_ID"
+          fi
+
+          if [[ $DESTINATION != "" ]]; then
+            echo $DESTINATION
+            echo "destination=$DESTINATION" >> "$GITHUB_OUTPUT"
+          else
+            echo "DESTINATION missing"
+            exit 1
+          fi
+
           if [[ "${{ inputs.workspace }}" != "" ]]; then
+            echo "Applying workspace ${{ inputs.workspace }}"
             echo 'workspace=-workspace "${{ inputs.workspace }}"' >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
