@@ -1,4 +1,7 @@
 # workflow-common-apple
+
+**This repo is no longer being maintained, do not use it**
+
 Common workflow pipeline for apple projects
 
 Builds and test projects using xcodebuild.
