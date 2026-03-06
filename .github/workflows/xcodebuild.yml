@@ -14,13 +14,13 @@ on:
         default: "macos-latest"
         required: false
         type: string
-      simulator_version:
-        description: "The simulator version to be used for destination. Note: if platform is 'macOS' than simulator_version is ignored."
-        required: false
-        type: string
       scheme:
         description: "The scheme to use."
         required: true
+        type: string
+      simulator_version:
+        description: "The simulator version to be used for destination. Note: if platform is 'macOS' than simulator_version is ignored."
+        required: false
         type: string
       skip_tests:
         description: "Should the tests be skipped."
