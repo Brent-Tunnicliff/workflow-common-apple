@@ -78,18 +78,16 @@ jobs:
       - name: Build debug
         env:
           DESTINATION: ${{ steps.setup.outputs.destination }}
-          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
         run: xcodebuild build
+          ${{ steps.arguments.outputs.common }}
           -configuration "Debug"
-          $COMMON_ARGUMENTS
 
       - name: Build package tests
         if: ${{ ! inputs.skip_tests }}
         env:
           DESTINATION: ${{ steps.setup.outputs.destination }}
-          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
         run: xcodebuild build-for-testing
-          $COMMON_ARGUMENTS
+          ${{ steps.arguments.outputs.common }}
 
       # ---------------------------
       # Test
@@ -100,10 +98,9 @@ jobs:
         env:
           DESTINATION: ${{ steps.setup.outputs.destination }}
           RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
-          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
         run: xcodebuild test-without-building
+          ${{ steps.arguments.outputs.common }}
           -resultBundlePath "$RESULTS_BUNDLE_PATH"
-          $COMMON_ARGUMENTS
 
       - name: Upload test results
         if: ${{ steps.configure_if_tests_can_run.outputs.can_tests_run == 'true' && (success() || failure()) }}
@@ -121,10 +118,9 @@ jobs:
       - name: Build package release
         env:
           DESTINATION: ${{ steps.setup.outputs.destination }}
-          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
         run: xcodebuild build
+          ${{ steps.arguments.outputs.common }}
           -configuration "Release"
-          $COMMON_ARGUMENTS
 
       # ---------------------------
       # Final checks
