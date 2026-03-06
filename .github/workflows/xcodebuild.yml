@@ -41,10 +41,7 @@ jobs:
   xcodebuild:
     runs-on: ${{ inputs.runs_on }}
     env:
-      PLATFORM: ${{ inputs.platform }}
       SCHEME: ${{ inputs.scheme }}
-      SIMULATOR_VERSION: ${{ inputs.simulator_version }}
-      XCODE_PATH: ${{ inputs.xcode_path }}
     steps:
       # ---------------------------
       # Setup
@@ -54,9 +51,10 @@ jobs:
         id: setup
         uses: Brent-Tunnicliff/action-setup-apple@v1
         with:
-          platform: $PLATFORM
-          simulator_version: $SIMULATOR_VERSION
-          xcode_path: $XCODE_PATH
+          platform: ${{ inputs.platform }}
+          simulator_version: ${{ inputs.simulator_version }}
+          test_results_prefix: "xcodebuild"
+          xcode_path: ${{ inputs.xcode_path }}
 
       - name: Set aruments
         id: arguments
