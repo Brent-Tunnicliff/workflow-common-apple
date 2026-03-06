@@ -1,0 +1,137 @@
+# Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Build and test using xcodebuild
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "The platform to be used, options are 'iOS', 'macOS', 'tvOS', 'watchOS', 'visionOS'."
+        required: true
+        type: string
+      runs_on:
+        description: "The runner image to use. Must be a macOS instance like 'macos-26'."
+        default: "macos-latest"
+        required: false
+        type: string
+      simulator_version:
+        description: "The simulator version to be used for destination. Note: if platform is 'macOS' than simulator_version is ignored."
+        required: false
+        type: string
+      scheme:
+        description: "The scheme to use."
+        required: true
+        type: string
+      skip_tests:
+        description: "Should the tests be skipped."
+        default: false
+        required: false
+        type: boolean
+      workspace:
+        description: "The workspace of the project."
+        required: false
+        type: string
+      xcode_path:
+        description: "The path to the instance of Xcode to use."
+        default: "/Applications/Xcode.app"
+        required: false
+        type: string
+
+jobs:
+  xcodebuild:
+    runs-on: ${{ inputs.runs_on }}
+    env:
+      PLATFORM: ${{ inputs.platform }}
+      SCHEME: ${{ inputs.scheme }}
+      SIMULATOR_VERSION: ${{ inputs.simulator_version }}
+      XCODE_PATH: ${{ inputs.xcode_path }}
+    steps:
+      # ---------------------------
+      # Setup
+      # ---------------------------
+
+      - name: Setup pipeline
+        id: setup
+        uses: Brent-Tunnicliff/action-setup-apple@v1
+        with:
+          platform: $PLATFORM
+          simulator_version: $SIMULATOR_VERSION
+          xcode_path: $XCODE_PATH
+
+      - name: Set aruments
+        id: arguments
+        env:
+          WORKSPACE: ${{ inputs.workspace }}
+        run: |
+          if [[ "$WORKSPACE" != "" ]]; then
+            echo "Applying workspace $WORKSPACE"
+            WORKSPACE_ARGUMENT='workspace=-workspace "$WORKSPACE"'
+          fi
+
+          # Arguments used across all xcodebuild steps.
+          COMMON_ARGUMENTS='$WORKSPACE_ARGUMENT -scheme "$SCHEME" -destination "$DESTINATION" -skipPackagePluginValidation CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO'
+          echo "Applying common arguments '$COMMON_ARGUMENTS'"
+          echo "common='$COMMON_ARGUMENTS'" >> "$GITHUB_OUTPUT"
+
+      # ---------------------------
+      # Build Debug
+      # ---------------------------
+
+      - name: Build debug
+        env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
+        run: xcodebuild build
+          -configuration "Debug"
+          $COMMON_ARGUMENTS
+
+      - name: Build package tests
+        if: ${{ ! inputs.skip_tests }}
+        env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
+        run: xcodebuild build-for-testing
+          $COMMON_ARGUMENTS
+
+      # ---------------------------
+      # Test
+      # ---------------------------
+
+      - name: Run package tests
+        if: ${{ ! inputs.skip_tests }}
+        env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
+          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
+        run: xcodebuild test-without-building
+          -resultBundlePath "$RESULTS_BUNDLE_PATH"
+          $COMMON_ARGUMENTS
+
+      - name: Upload test results
+        if: ${{ steps.configure_if_tests_can_run.outputs.can_tests_run == 'true' && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ steps.setup.outputs.test_results_file_name }}"
+          path: "${{ steps.setup.outputs.test_results_path }}"
+          if-no-files-found: error
+
+      # ---------------------------
+      # Build Release
+      # ---------------------------
+
+      # Lets make sure it also builds in release configuration in case there are conditionals.
+      - name: Build package release
+        env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          COMMON_ARGUMENTS: ${{ steps.arguments.outputs.common }}
+        run: xcodebuild build
+          -configuration "Release"
+          $COMMON_ARGUMENTS
+
+      # ---------------------------
+      # Final checks
+      # ---------------------------
+
+      # Make sure there are no local changes as any auto generated changes must be checked into git.
+      - name: Check git status
+        uses: Brent-Tunnicliff/action-git-status@v1
