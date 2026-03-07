@@ -98,7 +98,7 @@ jobs:
           -resultBundlePath "$RESULTS_BUNDLE_PATH"
 
       - name: Upload test results
-        if: ${{ steps.configure_if_tests_can_run.outputs.can_tests_run == 'true' && (success() || failure()) }}
+        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
           name: "${{ steps.setup.outputs.test_results_file_name }}"
