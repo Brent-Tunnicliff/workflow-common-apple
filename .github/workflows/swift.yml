@@ -15,10 +15,18 @@ on:
         default: false
         required: false
         type: boolean
+      working_directory:
+        description: "The working directory to run on."
+        default: "."
+        required: false
+        type: string
 
 jobs:
   swift:
     runs-on: ${{ inputs.runs_on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       # ---------------------------
       # Setup
