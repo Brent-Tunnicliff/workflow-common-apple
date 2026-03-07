@@ -1,0 +1,77 @@
+# Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Builds and runs tests for input project using swift.
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        description: "The runner image to use."
+        default: "macos-latest"
+        required: false
+        type: string
+      skip_tests:
+        description: "Should the tests be skipped."
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  swift:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      # ---------------------------
+      # Setup
+      # ---------------------------
+
+      - uses: SwiftyLab/setup-swift@v1
+      - name: List environment variables
+        shell: bash
+        run: set
+      - uses: actions/checkout@v4
+
+      # ---------------------------
+      # Build Debug
+      # ---------------------------
+
+      - name: Build debug
+        run: swift build
+          --configuration debug
+
+      # ---------------------------
+      # Run Tests
+      # ---------------------------
+
+      - name: Build tests
+        if: ${{ ! inputs.skip_tests }}
+        run: swift build 
+          --build-tests
+
+      - name: Run tests
+        if: ${{ ! inputs.skip_tests }}
+        run: swift test 
+          --xunit-output .build/report
+
+      - name: Upload test results
+        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-${{ inputs.runs_on }}-swift.zip
+          path: .build/report-swift-testing
+          if-no-files-found: error
+
+      # ---------------------------
+      # Build Release
+      # ---------------------------
+
+      # Lets make sure it also builds in release configuration in case there are conditionals.
+      - name: Build release
+        run: swift build
+          --configuration release
+
+      # ---------------------------
+      # Final checks
+      # ---------------------------
+
+      - name: Check git status
+        uses: Brent-Tunnicliff/action-git-status@v1
