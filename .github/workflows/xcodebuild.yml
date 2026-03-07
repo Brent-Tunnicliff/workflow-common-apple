@@ -1,0 +1,124 @@
+# Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Builds and runs tests for input project using xcodebuild.
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "The platform to be used, options are 'iOS', 'macOS', 'tvOS', 'watchOS', 'visionOS'."
+        required: true
+        type: string
+      runs_on:
+        description: "The runner image to use. Must be a macOS instance like 'macos-26'."
+        default: "macos-latest"
+        required: false
+        type: string
+      scheme:
+        description: "The scheme to use."
+        required: true
+        type: string
+      simulator_version:
+        description: "The simulator version to be used for destination. Note: if platform is 'macOS' than simulator_version is ignored."
+        required: false
+        type: string
+      skip_tests:
+        description: "Should the tests be skipped."
+        default: false
+        required: false
+        type: boolean
+      workspace:
+        description: "The workspace of the project."
+        required: false
+        type: string
+      xcode_path:
+        description: "The path to the instance of Xcode to use."
+        default: "/Applications/Xcode.app"
+        required: false
+        type: string
+
+jobs:
+  xcodebuild:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      # ---------------------------
+      # Setup
+      # ---------------------------
+
+      - name: Setup pipeline
+        id: setup
+        uses: Brent-Tunnicliff/action-setup-apple@v1
+        with:
+          platform: ${{ inputs.platform }}
+          simulator_version: ${{ inputs.simulator_version }}
+          test_results_prefix: "xcodebuild"
+          xcode_path: ${{ inputs.xcode_path }}
+
+      - name: Set aruments
+        id: arguments
+        env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          SCHEME: ${{ inputs.scheme }}
+          WORKSPACE: ${{ inputs.workspace }}
+        run: |
+          if [[ "$WORKSPACE" != "" ]]; then
+            echo "Applying workspace '$WORKSPACE'"
+            WORKSPACE_ARGUMENT="workspace=-workspace '$WORKSPACE'"
+          fi
+
+          # Arguments used across all xcodebuild steps.
+          COMMON_ARGUMENTS="$WORKSPACE_ARGUMENT -scheme '$SCHEME' -destination '$DESTINATION' -skipPackagePluginValidation CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+          echo "Applying common arguments '$COMMON_ARGUMENTS'"
+          echo "common=$COMMON_ARGUMENTS" >> "$GITHUB_OUTPUT"
+
+      # ---------------------------
+      # Build Debug
+      # ---------------------------
+
+      - name: Build debug
+        run: xcodebuild build
+          ${{ steps.arguments.outputs.common }}
+          -configuration "Debug"
+
+      # ---------------------------
+      # Run Tests
+      # ---------------------------
+
+      - name: Build package tests
+        if: ${{ ! inputs.skip_tests }}
+        run: xcodebuild build-for-testing
+          ${{ steps.arguments.outputs.common }}
+
+      - name: Run package tests
+        if: ${{ ! inputs.skip_tests }}
+        env:
+          RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
+        run: xcodebuild test-without-building
+          ${{ steps.arguments.outputs.common }}
+          -resultBundlePath "$RESULTS_BUNDLE_PATH"
+
+      - name: Upload test results
+        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ steps.setup.outputs.test_results_file_name }}"
+          path: "${{ steps.setup.outputs.test_results_path }}"
+          if-no-files-found: error
+
+      # ---------------------------
+      # Build Release
+      # ---------------------------
+
+      # Lets make sure it also builds in release configuration in case there are conditionals.
+      - name: Build package release
+        run: xcodebuild build
+          ${{ steps.arguments.outputs.common }}
+          -configuration "Release"
+
+      # ---------------------------
+      # Final checks
+      # ---------------------------
+
+      # Make sure there are no local changes as any auto generated changes must be checked into git.
+      - name: Check git status
+        uses: Brent-Tunnicliff/action-git-status@v1

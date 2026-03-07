@@ -1,9 +1,24 @@
 # workflow-common-apple
 
-**This repo is no longer being maintained, do not use it**
+Common workflow pipelines for apple and swift projects.
 
-Common workflow pipeline for apple projects
+## Workflows:
 
-Builds and test projects using xcodebuild.
+### xcodebuild
 
-Note: The macOS instance, simulator destinations and Xcode version are hard coded, as they are all closely tied together. 
+Builds and runs tests for input project using xcodebuild.
+Checks git status at the end to make sure that no unhandled generated files are present.
+
+### swift
+
+Builds and runs tests for input project using swift.
+Checks git status at the end to make sure that no unhandled generated files are present.
+
+### lint
+
+Runs strict swift lint for the whole repository.
+
+## Disclaimer
+
+This project is open source and open to anyone to use as they see fit.
+But I am building this with myself as the main target audience, so this will not be published anywhere.
