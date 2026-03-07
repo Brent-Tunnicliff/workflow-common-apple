@@ -40,8 +40,6 @@ on:
 jobs:
   xcodebuild:
     runs-on: ${{ inputs.runs_on }}
-    env:
-      SCHEME: ${{ inputs.scheme }}
     steps:
       # ---------------------------
       # Setup
@@ -59,15 +57,17 @@ jobs:
       - name: Set aruments
         id: arguments
         env:
+          DESTINATION: ${{ steps.setup.outputs.destination }}
+          SCHEME: ${{ inputs.scheme }}
           WORKSPACE: ${{ inputs.workspace }}
         run: |
           if [[ "$WORKSPACE" != "" ]]; then
-            echo "Applying workspace $WORKSPACE"
-            WORKSPACE_ARGUMENT='workspace=-workspace "$WORKSPACE"'
+            echo "Applying workspace '$WORKSPACE'"
+            WORKSPACE_ARGUMENT="workspace=-workspace '$WORKSPACE'"
           fi
 
           # Arguments used across all xcodebuild steps.
-          COMMON_ARGUMENTS='$WORKSPACE_ARGUMENT -scheme "$SCHEME" -destination "$DESTINATION" -skipPackagePluginValidation CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO'
+          COMMON_ARGUMENTS="$WORKSPACE_ARGUMENT -scheme '$SCHEME' -destination '$DESTINATION' -skipPackagePluginValidation CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
           echo "Applying common arguments '$COMMON_ARGUMENTS'"
           echo "common='$COMMON_ARGUMENTS'" >> "$GITHUB_OUTPUT"
 
@@ -76,16 +76,12 @@ jobs:
       # ---------------------------
 
       - name: Build debug
-        env:
-          DESTINATION: ${{ steps.setup.outputs.destination }}
         run: xcodebuild build
           ${{ steps.arguments.outputs.common }}
           -configuration "Debug"
 
       - name: Build package tests
         if: ${{ ! inputs.skip_tests }}
-        env:
-          DESTINATION: ${{ steps.setup.outputs.destination }}
         run: xcodebuild build-for-testing
           ${{ steps.arguments.outputs.common }}
 
@@ -96,7 +92,6 @@ jobs:
       - name: Run package tests
         if: ${{ ! inputs.skip_tests }}
         env:
-          DESTINATION: ${{ steps.setup.outputs.destination }}
           RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
         run: xcodebuild test-without-building
           ${{ steps.arguments.outputs.common }}
@@ -116,8 +111,6 @@ jobs:
 
       # Lets make sure it also builds in release configuration in case there are conditionals.
       - name: Build package release
-        env:
-          DESTINATION: ${{ steps.setup.outputs.destination }}
         run: xcodebuild build
           ${{ steps.arguments.outputs.common }}
           -configuration "Release"
