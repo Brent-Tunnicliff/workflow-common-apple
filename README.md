@@ -6,17 +6,17 @@ Common workflow pipelines for apple and swift projects.
 
 ### xcodebuild
 
-Builds and test projects using xcodebuild.
+Builds and runs tests for input project using xcodebuild.
 Checks git status at the end to make sure that no unhandled generated files are present.
 
 ### swift
 
-Builds and test projects using swift.
+Builds and runs tests for input project using swift.
 Checks git status at the end to make sure that no unhandled generated files are present.
 
 ### lint
 
-Checks out the project and runs strict swift lint.
+Runs strict swift lint for the whole repository.
 
 ## Disclaimer
 

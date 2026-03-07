@@ -1,6 +1,6 @@
 # Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
 
-name: Build and test using xcodebuild
+name: Builds and runs tests for input project using xcodebuild.
 
 on:
   workflow_call:
@@ -80,14 +80,14 @@ jobs:
           ${{ steps.arguments.outputs.common }}
           -configuration "Debug"
 
+      # ---------------------------
+      # Run Tests
+      # ---------------------------
+
       - name: Build package tests
         if: ${{ ! inputs.skip_tests }}
         run: xcodebuild build-for-testing
           ${{ steps.arguments.outputs.common }}
-
-      # ---------------------------
-      # Test
-      # ---------------------------
 
       - name: Run package tests
         if: ${{ ! inputs.skip_tests }}

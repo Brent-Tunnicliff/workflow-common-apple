@@ -1,0 +1,24 @@
+# Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Runs strict swift lint for the whole repository.
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+          description: "The runner image to use. Must be an image with swift pre-installed like 'macos-latest'."
+          default: "macos-latest"
+          required: false
+          type: string
+
+jobs:
+  lint:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - name: List environment variables
+        shell: bash
+        run: set
+      - uses: actions/checkout@v4
+      - name: Strict lint
+        shell: bash
+        run: swift format lint . --recursive --parallel --strict
