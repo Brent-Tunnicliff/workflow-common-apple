@@ -36,7 +36,7 @@ jobs:
       - name: List environment variables
         shell: bash
         run: set
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ---------------------------
       # Build Debug
@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload test results
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-${{ inputs.runs_on }}-swift.zip
           path: .build/report-swift-testing
