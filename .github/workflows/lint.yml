@@ -18,7 +18,7 @@ jobs:
       - name: List environment variables
         shell: bash
         run: set
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Strict lint
         shell: bash
         run: swift format lint . --recursive --parallel --strict

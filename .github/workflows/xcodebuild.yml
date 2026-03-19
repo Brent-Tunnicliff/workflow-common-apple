@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload test results
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "${{ steps.setup.outputs.test_results_file_name }}"
           path: "${{ steps.setup.outputs.test_results_path }}"
