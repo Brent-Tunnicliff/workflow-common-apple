@@ -55,7 +55,7 @@ jobs:
 
       - name: Setup pipeline
         id: setup
-        uses: Brent-Tunnicliff/action-setup-apple@bump_checkout_action
+        uses: Brent-Tunnicliff/action-setup-apple@v1
         with:
           platform: ${{ inputs.platform }}
           simulator_version: ${{ inputs.simulator_version }}
