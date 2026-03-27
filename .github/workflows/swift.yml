@@ -77,7 +77,7 @@ jobs:
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
         uses: actions/upload-artifact@v7
         with:
-          name: test-${{ inputs.runs_on }}-swift.zip
+          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}.zip
           path: .build/report-swift-testing
           if-no-files-found: error
 
