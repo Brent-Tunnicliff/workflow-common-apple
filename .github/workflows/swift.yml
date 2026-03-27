@@ -10,11 +10,21 @@ on:
         default: "macos-latest"
         required: false
         type: string
+      sdks:
+        description: "The SDK's to be installed by 'SwiftyLab/setup-swift'."
+        required: false
+        default: ''
+        type: string
       skip_tests:
         description: "Should the tests be skipped."
         default: false
         required: false
         type: boolean
+      swift_version:
+        description: "The version of swift to use by 'SwiftyLab/setup-swift'."
+        required: false
+        default: 'latest'
+        type: string
       working_directory:
         description: "The working directory to run on."
         default: "."
@@ -33,6 +43,9 @@ jobs:
       # ---------------------------
 
       - uses: SwiftyLab/setup-swift@v1
+        with:
+          sdks: ${{ inputs.sdks }}
+          swift-version: ${{ inputs.swift_version }}
       - name: List environment variables
         shell: bash
         run: set
