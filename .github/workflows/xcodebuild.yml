@@ -71,7 +71,7 @@ jobs:
         run: |
           if [[ "$WORKSPACE" != "" ]]; then
             echo "Applying workspace '$WORKSPACE'"
-            WORKSPACE_ARGUMENT="workspace=-workspace '$WORKSPACE'"
+            WORKSPACE_ARGUMENT="-workspace '$WORKSPACE'"
           fi
 
           # Arguments used across all xcodebuild steps.
