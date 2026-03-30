@@ -10,11 +10,26 @@ on:
         default: "macos-latest"
         required: false
         type: string
+      sdks:
+        description: "The SDK's to be installed by 'SwiftyLab/setup-swift'."
+        required: false
+        default: ''
+        type: string
       skip_tests:
         description: "Should the tests be skipped."
         default: false
         required: false
         type: boolean
+      swift_sdk:
+        description: "The sdk name to use during build and tests."
+        default: ""
+        required: false
+        type: string
+      swift_version:
+        description: "The version of swift to use by 'SwiftyLab/setup-swift'."
+        required: false
+        default: 'latest'
+        type: string
       working_directory:
         description: "The working directory to run on."
         default: "."
@@ -33,10 +48,28 @@ jobs:
       # ---------------------------
 
       - uses: SwiftyLab/setup-swift@v1
+        with:
+          sdks: ${{ inputs.sdks }}
+          swift-version: ${{ inputs.swift_version }}
       - name: List environment variables
         shell: bash
         run: set
       - uses: actions/checkout@v6
+
+      - name: Set aruments
+        id: arguments
+        env:
+          SWIFT_SDK: ${{ inputs.swift_sdk }}
+        run: |
+          if [[ "$SWIFT_SDK" != "" ]]; then
+            echo "Applying sdk '$SWIFT_SDK'"
+            SWIFT_SDK_ARGUMENT="--swift-sdk '$SWIFT_SDK'"
+          fi
+
+          # Arguments used across all steps.
+          COMMON_ARGUMENTS="$SWIFT_SDK_ARGUMENT"
+          echo "Applying common arguments '$COMMON_ARGUMENTS'"
+          echo "common=$COMMON_ARGUMENTS" >> "$GITHUB_OUTPUT"
 
       # ---------------------------
       # Build Debug
@@ -45,6 +78,7 @@ jobs:
       - name: Build debug
         run: swift build
           --configuration debug
+          ${{ steps.arguments.outputs.common }}
 
       # ---------------------------
       # Run Tests
@@ -54,17 +88,19 @@ jobs:
         if: ${{ ! inputs.skip_tests }}
         run: swift build 
           --build-tests
+          ${{ steps.arguments.outputs.common }}
 
       - name: Run tests
         if: ${{ ! inputs.skip_tests }}
         run: swift test 
           --xunit-output .build/report
+          ${{ steps.arguments.outputs.common }}
 
       - name: Upload test results
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
         uses: actions/upload-artifact@v7
         with:
-          name: test-${{ inputs.runs_on }}-swift.zip
+          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}.zip
           path: .build/report-swift-testing
           if-no-files-found: error
 
@@ -76,6 +112,7 @@ jobs:
       - name: Build release
         run: swift build
           --configuration release
+          ${{ steps.arguments.outputs.common }}
 
       # ---------------------------
       # Final checks
