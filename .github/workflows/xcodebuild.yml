@@ -92,12 +92,12 @@ jobs:
       # Run Tests
       # ---------------------------
 
-      - name: Build package tests
+      - name: Build tests
         if: ${{ ! inputs.skip_tests }}
         run: xcodebuild build-for-testing
           ${{ steps.arguments.outputs.common }}
 
-      - name: Run package tests
+      - name: Run tests
         if: ${{ ! inputs.skip_tests }}
         env:
           RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
@@ -118,7 +118,7 @@ jobs:
       # ---------------------------
 
       # Lets make sure it also builds in release configuration in case there are conditionals.
-      - name: Build package release
+      - name: Build release
         run: xcodebuild build
           ${{ steps.arguments.outputs.common }}
           -configuration "Release"
