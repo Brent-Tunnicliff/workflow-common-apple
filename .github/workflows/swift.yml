@@ -58,6 +58,7 @@ jobs:
 
       - name: Set aruments
         id: arguments
+        shell: bash
         env:
           SWIFT_SDK: ${{ inputs.swift_sdk }}
         run: |
