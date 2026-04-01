@@ -1,0 +1,99 @@
+# Copyright © 2026 Brent Tunnicliff <brent@tunnicliff.dev>
+
+name: Builds the documentation for a swift project and publishes it to GitHub Pages.
+
+on:
+  workflow_call:
+    inputs:
+      fetch_depth:
+        description: "Number of commits to fetch. 0 indicates all history for all branches and tags. Passed into 'actions/checkout'."
+        default: 1
+        required: false
+        type: number
+      ref:
+        description: "The branch, tag or SHA to checkout. Passed into 'actions/checkout'."
+        required: false
+        type: string
+      target:
+        description: "The target to generate documentation for."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "documentation"
+  cancel-in-progress: false
+
+env:
+  DOCS_OUTPUT_PATH: "./.build/documentation/"
+
+jobs:
+  documentation:
+    runs-on: macos-26
+    steps:
+      - uses: SwiftyLab/setup-swift@v1
+
+      - name: List environment variables
+        shell: bash
+        run: set
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: ${{ inputs.fetch_depth }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Generate Documentation
+        shell: bash
+        run: swift package
+          --allow-writing-to-directory "$DOCS_OUTPUT_PATH"
+          generate-documentation
+          --target "${{ inputs.target }}"
+          --transform-for-static-hosting
+          --hosting-base-path "${GITHUB_REPOSITORY##*/}"
+          --output-path "$DOCS_OUTPUT_PATH"
+          --warnings-as-errors
+          --checkout-path "$GITHUB_WORKSPACE"
+          --source-service "github"
+          --source-service-base-url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${{ inputs.ref || github.sha }}"
+
+      - name: Add redirect index
+        shell: bash
+        run: |
+          MODULE=$(ls "$DOCS_OUTPUT_PATH/documentation")
+          echo "Documentation module: $MODULE"
+
+          cat > "$DOCS_OUTPUT_PATH/index.html" <<EOF
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta http-equiv="refresh" content="0; url=./documentation/$MODULE/">
+            </head>
+            <body>
+              <p>Redirecting to documentation...</p>
+            </body>
+          </html>
+          EOF
+
+      - name: List docs files
+        shell: bash
+        run: ls -R "$DOCS_OUTPUT_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ env.DOCS_OUTPUT_PATH }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Success
+        shell: bash
+        run: echo "Documentation deployed to ${{ steps.deployment.outputs.page_url }}"
