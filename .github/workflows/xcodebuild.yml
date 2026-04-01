@@ -42,6 +42,8 @@ on:
         required: false
         type: string
 
+permissions: {}
+
 jobs:
   xcodebuild:
     runs-on: ${{ inputs.runs_on }}

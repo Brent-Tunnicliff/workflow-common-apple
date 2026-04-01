@@ -36,6 +36,8 @@ on:
         required: false
         type: string
 
+permissions: {}
+
 jobs:
   swift:
     runs-on: ${{ inputs.runs_on }}
