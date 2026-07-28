@@ -16,7 +16,11 @@ on:
         type: string
       target:
         description: "The target to generate documentation for."
-        required: true
+        required: false
+        type: string
+      target_list_json:
+        description: "The targets to generate documentation for. Must be a json array of strings like: ['one', 'two', 'three']. If a value is passed in then the input `target` is ignored."
+        required: false
         type: string
 
 permissions:
@@ -32,7 +36,25 @@ env:
   DOCS_OUTPUT_PATH: "./.build/documentation/"
 
 jobs:
-  documentation:
+  validate_inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          if [[ -z "${{ inputs.target }}" && -z "${{ inputs.target_list_json }}" ]]; then
+            echo "::error::You must provide either 'target' or 'target_list_json'."
+            exit 1
+          fi
+
+          if [[ -n "${{ inputs.target }}" && -n "${{ inputs.target_list_json }}" ]]; then
+            echo "::error::Provide only one of 'target' or 'target_list_json', not both."
+            exit 1
+          fi
+
+  generate-single:
+    needs: validate_inputs
+    if: ${{ inputs.target != "" }}
     runs-on: macos-26
     steps:
       - uses: SwiftyLab/setup-swift@v1
@@ -66,7 +88,7 @@ jobs:
       - name: Add redirect index
         shell: bash
         run: |
-          MODULE=$(ls "$DOCS_OUTPUT_PATH/documentation")
+          MODULE="$(basename "$(find "$DOCS_OUTPUT_PATH/documentation" -mindepth 1 -maxdepth 1 -type d | head -n1)")"
           echo "Documentation module: $MODULE"
 
           cat > "$DOCS_OUTPUT_PATH/index.html" <<EOF
@@ -78,6 +100,119 @@ jobs:
             <body>
               <p>Redirecting to documentation...</p>
             </body>
+          </html>
+          EOF
+
+      - name: List docs files
+        shell: bash
+        run: ls -R "$DOCS_OUTPUT_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ env.DOCS_OUTPUT_PATH }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Success
+        shell: bash
+        run: echo "Documentation deployed to ${{ steps.deployment.outputs.page_url }}"
+
+  generate-matrix:
+    needs: validate_inputs
+    if: ${{ inputs.target_list_json != "" }}
+    runs-on: macos-26
+    strategy:
+      matrix:
+        # Convert the incoming JSON string back into a usable array
+        target: ${{ fromJSON(inputs.target_list_json) }}
+    env:
+      TARGET_DOCS_OUTPUT_PATH: "${{ env.DOCS_OUTPUT_PATH }}/${{ matrix.target }}"
+    steps:
+      - uses: SwiftyLab/setup-swift@v1
+
+      - name: List environment variables
+        shell: bash
+        run: set
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: ${{ inputs.fetch_depth }}
+
+      - name: Generate Documentation
+        shell: bash
+        run: swift package
+          --allow-writing-to-directory "$TARGET_DOCS_OUTPUT_PATH"
+          generate-documentation
+          --target "${{ matrix.target }}"
+          --transform-for-static-hosting
+          --hosting-base-path "${GITHUB_REPOSITORY##*/}/${{ matrix.target }}"
+          --output-path "$TARGET_DOCS_OUTPUT_PATH"
+          --warnings-as-errors
+          --checkout-path "$GITHUB_WORKSPACE"
+          --source-service "github"
+          --source-service-base-url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${{ inputs.ref || github.sha }}"
+
+      - name: List docs files
+        shell: bash
+        run: ls -R "$TARGET_DOCS_OUTPUT_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          name: documentation-${{ matrix.target }}
+          path: ${{ env.TARGET_DOCS_OUTPUT_PATH }}
+
+  publish-matrix:
+    needs: generate-matrix
+    runs-on: macos-26
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      # We assume that all matrix targets stored their documentation in unique directories within `env.DOCS_OUTPUT_PATH`.
+      - name: Download all matrix artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: documentation-*
+          path: ${{ env.DOCS_OUTPUT_PATH }}
+          merge-multiple: true
+
+      - name: Add root index
+        shell: bash
+        env:
+          TARGETS: ${{ inputs.target_list_json }}
+        run: |
+          set -euo pipefail
+
+          INDEX_FILE="$DOCS_OUTPUT_PATH/index.html"
+          REPOSITORY_NAME="${GITHUB_REPOSITORY##*/}"
+
+          cat > "$INDEX_FILE" <<EOF
+          <!doctype html>
+          <html lang="en">
+          <head>
+              <meta charset="utf-8">
+              <title>${REPOSITORY_NAME} documentation</title>
+          </head>
+          <body>
+          <h1>${REPOSITORY_NAME} documentation</h1>
+          <ul>
+          EOF
+
+          jq -r '.[]' <<<"$TARGETS" | while IFS= read -r target; do
+              printf '    <li><a href="%s/">%s</a></li>\n' \
+                  "$target" \
+                  "$target" \
+                  >> "$INDEX_FILE"
+          done
+
+          cat >> "$INDEX_FILE" <<EOF
+          </ul>
+          </body>
           </html>
           EOF
 
