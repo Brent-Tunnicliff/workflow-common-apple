@@ -115,6 +115,14 @@ jobs:
           path: "${{ steps.setup.outputs.test_results_path }}"
           if-no-files-found: error
 
+      - name: Test Report
+        uses: dorny/test-reporter@v3
+        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
+        with:
+          name: "${{ steps.setup.outputs.test_results_file_name }}"
+          path: "${{ steps.setup.outputs.test_results_path }}"
+          reporter: swift-xunit
+
       # ---------------------------
       # Build Release
       # ---------------------------

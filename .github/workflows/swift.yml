@@ -97,6 +97,7 @@ jobs:
         if: ${{ ! inputs.skip_tests }}
         run: swift test 
           --xunit-output .build/report
+          --parallel
           ${{ steps.arguments.outputs.common }}
 
       - name: Upload test results
@@ -106,6 +107,14 @@ jobs:
           name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}.zip
           path: .build/report-swift-testing
           if-no-files-found: error
+
+      - name: Test Report
+        uses: dorny/test-reporter@v3
+        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
+        with:
+          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}
+          path: .build/report-swift-testing
+          reporter: swift-xunit
 
       # ---------------------------
       # Build Release
