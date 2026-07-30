@@ -142,6 +142,11 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: ${{ inputs.fetch_depth }}
 
+      # I am seeing errors when running the Generate Documentation step with the nested output if the path does not exist, so manually doing that here.
+      - name: Create directories
+        shell: bash
+        run: mkdir -p "$TARGET_DOCS_OUTPUT_PATH"
+
       - name: Generate Documentation
         shell: bash
         run: swift package
