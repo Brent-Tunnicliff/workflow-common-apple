@@ -103,9 +103,10 @@ jobs:
         if: ${{ ! inputs.skip_tests }}
         env:
           RESULTS_BUNDLE_PATH: ${{ steps.setup.outputs.test_results_path }}
-        run: xcodebuild test-without-building
+        run: set -o pipefail && xcodebuild test-without-building
           ${{ steps.arguments.outputs.common }}
-          -resultBundlePath "$RESULTS_BUNDLE_PATH"
+          -resultBundlePath "$RESULTS_BUNDLE_PATH" |
+          xcbeautify --report junit --renderer github-actions
 
       - name: Upload test results
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
@@ -119,8 +120,8 @@ jobs:
         uses: dorny/test-reporter@v3
         if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
         with:
-          name: "${{ steps.setup.outputs.test_results_file_name }}"
-          path: "${{ steps.setup.outputs.test_results_path }}"
+          name: test-${{ inputs.platform }}-${{ inputs.simulator_version }}
+          path: build/reports/junit.xml
           reporter: swift-xunit
 
       # ---------------------------
