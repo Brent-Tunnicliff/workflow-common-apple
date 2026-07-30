@@ -129,7 +129,7 @@ jobs:
         # Convert the incoming JSON string back into a usable array
         target: ${{ fromJSON(inputs.target_list_json) }}
     env:
-      TARGET_DOCS_OUTPUT_PATH: "${{ env.DOCS_OUTPUT_PATH }}/${{ matrix.target }}"
+      TARGET_DOCS_OUTPUT_PATH: "./.build/documentation/${{ matrix.target }}"
     steps:
       - uses: SwiftyLab/setup-swift@v1
 
