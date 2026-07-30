@@ -125,6 +125,8 @@ jobs:
     if: ${{ inputs.target_list_json != '' }}
     runs-on: macos-26
     strategy:
+      # Don't cancel the other matrix values if one fails.
+      fail-fast: false
       matrix:
         # Convert the incoming JSON string back into a usable array
         target: ${{ fromJSON(inputs.target_list_json) }}
