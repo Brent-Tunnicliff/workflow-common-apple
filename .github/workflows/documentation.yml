@@ -54,7 +54,7 @@ jobs:
 
   generate-single:
     needs: validate_inputs
-    if: ${{ inputs.target != "" }}
+    if: ${{ inputs.target != '' }}
     runs-on: macos-26
     steps:
       - uses: SwiftyLab/setup-swift@v1
@@ -122,7 +122,7 @@ jobs:
 
   generate-matrix:
     needs: validate_inputs
-    if: ${{ inputs.target_list_json != "" }}
+    if: ${{ inputs.target_list_json != '' }}
     runs-on: macos-26
     strategy:
       matrix:
