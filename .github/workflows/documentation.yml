@@ -19,7 +19,7 @@ on:
         required: false
         type: string
       target_list_json:
-        description: "The targets to generate documentation for. Must be a json array of strings like: ['one', 'two', 'three']. If a value is passed in then the input `target` is ignored."
+        description: 'The targets to generate documentation for. Must be a JSON array of strings such as: ["one", "two", "three"].'
         required: false
         type: string
 
@@ -50,6 +50,10 @@ jobs:
           if [[ -n "${{ inputs.target }}" && -n "${{ inputs.target_list_json }}" ]]; then
             echo "::error::Provide only one of 'target' or 'target_list_json', not both."
             exit 1
+          fi
+
+          if [[ -n "${{ inputs.targets }}" ]]; then
+            echo '${{ inputs.targets }}' | jq empty
           fi
 
   generate-single:
@@ -108,7 +112,7 @@ jobs:
         run: ls -R "$DOCS_OUTPUT_PATH"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ env.DOCS_OUTPUT_PATH }}
 
@@ -168,7 +172,7 @@ jobs:
         run: ls -R "$TARGET_DOCS_OUTPUT_PATH"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           name: documentation-${{ matrix.target }}
           path: ${{ env.TARGET_DOCS_OUTPUT_PATH }}
@@ -182,7 +186,7 @@ jobs:
 
       # We assume that all matrix targets stored their documentation in unique directories within `env.DOCS_OUTPUT_PATH`.
       - name: Download all matrix artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: documentation-*
           path: ${{ env.DOCS_OUTPUT_PATH }}
@@ -228,7 +232,7 @@ jobs:
         run: ls -R "$DOCS_OUTPUT_PATH"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ env.DOCS_OUTPUT_PATH }}
 
