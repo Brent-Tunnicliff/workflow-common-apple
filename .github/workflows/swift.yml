@@ -5,6 +5,11 @@ name: Builds and runs tests for input project using swift.
 on:
   workflow_call:
     inputs:
+      generate_test_report:
+        description: "Should the tests produce a report."
+        default: true
+        required: false
+        type: boolean
       runs_on:
         description: "The runner image to use."
         default: "macos-latest"
@@ -62,6 +67,7 @@ jobs:
         id: arguments
         shell: bash
         env:
+          GENERATE_TEST_REPORT: ${{ inputs.generate_test_report }}
           SWIFT_SDK: ${{ inputs.swift_sdk }}
         run: |
           if [[ "$SWIFT_SDK" != "" ]]; then
@@ -73,6 +79,14 @@ jobs:
           COMMON_ARGUMENTS="$SWIFT_SDK_ARGUMENT"
           echo "Applying common arguments '$COMMON_ARGUMENTS'"
           echo "common=$COMMON_ARGUMENTS" >> "$GITHUB_OUTPUT"
+
+          if [[ "$GENERATE_TEST_REPORT" == "true" ]]; then
+            GENERATE_TEST_REPORT_ARGUMENT="--xunit-output .build/report --parallel"
+          fi
+
+          # Arguments used across all steps.
+          echo "Applying test report argument '$GENERATE_TEST_REPORT_ARGUMENT'"
+          echo "test_report_argument=$GENERATE_TEST_REPORT_ARGUMENT" >> "$GITHUB_OUTPUT"
 
       # ---------------------------
       # Build Debug
@@ -96,16 +110,24 @@ jobs:
       - name: Run tests
         if: ${{ ! inputs.skip_tests }}
         run: swift test 
-          --xunit-output .build/report
+          ${{ steps.arguments.outputs.test_report_argument }}
           ${{ steps.arguments.outputs.common }}
 
       - name: Upload test results
-        if: ${{ (! inputs.skip_tests)  && (success() || failure()) }}
+        if: ${{ (! inputs.skip_tests) && (inputs.generate_test_report)  && (success() || failure()) }}
         uses: actions/upload-artifact@v7
         with:
-          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}.zip
+          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}
           path: .build/report-swift-testing
           if-no-files-found: error
+
+      - name: Test Report
+        uses: dorny/test-reporter@v3
+        if: ${{ (! inputs.skip_tests) && (inputs.generate_test_report) && (success() || failure()) }}
+        with:
+          name: test-${{ inputs.runs_on }}-${{ inputs.sdks }}-swift-${{ inputs.swift_version }}
+          path: .build/report-swift-testing
+          reporter: swift-xunit
 
       # ---------------------------
       # Build Release
