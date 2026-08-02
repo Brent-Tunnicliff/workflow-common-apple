@@ -172,10 +172,11 @@ jobs:
         run: ls -R "$TARGET_DOCS_OUTPUT_PATH"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: documentation-${{ matrix.target }}
           path: ${{ env.TARGET_DOCS_OUTPUT_PATH }}
+          if-no-files-found: error
 
   publish-matrix:
     needs: generate-matrix
