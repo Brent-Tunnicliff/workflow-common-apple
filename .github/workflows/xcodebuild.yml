@@ -77,7 +77,7 @@ jobs:
           fi
 
           # Arguments used across all xcodebuild steps.
-          COMMON_ARGUMENTS="$WORKSPACE_ARGUMENT -scheme '$SCHEME' -destination '$DESTINATION' -skipPackagePluginValidation CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO"
+          COMMON_ARGUMENTS="$WORKSPACE_ARGUMENT -scheme '$SCHEME' -destination '$DESTINATION' -skipPackagePluginValidation CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO -disableAutomaticPackageResolution"
           echo "Applying common arguments '$COMMON_ARGUMENTS'"
           echo "common=$COMMON_ARGUMENTS" >> "$GITHUB_OUTPUT"
 

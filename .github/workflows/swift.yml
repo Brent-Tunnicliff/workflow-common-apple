@@ -76,7 +76,7 @@ jobs:
           fi
 
           # Arguments used across all steps.
-          COMMON_ARGUMENTS="$SWIFT_SDK_ARGUMENT"
+          COMMON_ARGUMENTS="$SWIFT_SDK_ARGUMENT --disable-automatic-resolution"
           echo "Applying common arguments '$COMMON_ARGUMENTS'"
           echo "common=$COMMON_ARGUMENTS" >> "$GITHUB_OUTPUT"
 
